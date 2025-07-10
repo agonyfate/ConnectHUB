@@ -1,0 +1,191 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js" integrity="..." crossorigin="anonymous" referrerpolicy="no-referrer"></script> <!--frontend basically. without this client side pe kuch nahin hoga. for client to recognise io() we need this-->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Welcome to ConnectHUB!</h1>
+        <h2>Hi, <%= user.name %></h2>
+        <h6><a href="/logout" class="link">LOGOUT</a></h6>
+        <% 
+            if (user.role === 'admin') { 
+                %>
+                    <h6><a class="yuh" href="/admin">PANEL</a></h6>
+                <%
+            }
+        %>
+    </header>
+
+    <section class="container">
+        <nav class="sidebar">
+            <ul class="list-group">
+                <% if(users.length > 0){ %>
+                    <% for(let i = 0; i < users.length; i++){ %>
+                        <li class="list-group-item pointy user-list" data-id="<%= users[i]['_id'] %>">
+                            <%= users[i].name %>
+
+                            <%
+                                if(users[i]['isOnline'] == 1){
+                                    %>
+                                        <sup class="online" id="<%= users[i]['_id'] %> - status">Online</sup>
+                                    <%
+                                } else {
+                                    %>
+                                        <sup class="offline" id="<%= users[i]['_id'] %> - status">Offline</sup>
+                                    <%
+                                }
+                            %>
+                        </li>
+                    <% } %>
+                <% } else { %>
+                    <li class="list-group-item">No users found.</li>
+                <% } %>
+            </ul>
+        </nav>
+
+        <article class="chatbox">
+            <div class="show">
+                <div id="box">
+                </div>
+                <div class="msg">
+                    <form action="#" id="msg-box">
+                        <input type="text" name="msginput" id="msginput">
+                        <button class="btn" type="submit">Send</button>
+                    </form>
+                </div>
+            </div>
+        </article>
+    </section>
+
+    <script> //client
+        var sid = '<%= user._id %>'; //stores id of user logged in as the sender id
+        var rid;
+
+        const socket = io('/user-namespace', { //connects the client to the user-namespace of our socket.io server
+            auth:{
+                token: '<%= user._id %>' //client sends user id as a token in auth field during handshake (no clue what that is but ig when client and server pass req, res)
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", () => { //makes sure the html page is loaded before running further code. ie. makes sure all elements are loaded in before running code that concerns them
+            const users = document.querySelectorAll(".user-list"); //selects all var with user-list class. that is the users in db
+            const showBox = document.querySelector(".show"); //finds what has the show class
+            users.forEach(user => { //loops over each user-list item.
+                user.addEventListener('click', ()=>{ //so now if we click on any of the items (users), it executes the next line of code. this line of code is 'listening' for us to click
+                    const uid = user.getAttribute('data-id'); //gets value of the data-od attribute; here the user list mein jispe bhi humne click kiya uski id
+                    rid = uid;
+                    
+                    showBox.style.display = "block"; //sets the show class display to block instead of none
+
+                    console.log("Clicked on user:", rid);
+                    console.log("showBox element:", showBox);
+
+                    socket.emit('pastChat', {sender_id:sid, receiver_id:rid});
+                });
+            });
+        });
+
+        socket.on('HI', function(data) { //listens for event HI. we pass data into the dunction whihc has the user_id using which we can get the status
+            const status = document.getElementById(`${data.user_id}-status`); //gets the element with whatever id we have
+            if (status){ //if statement checks if element exists once
+                status.textContent = 'Online'; //since HI; we change to online
+                status.classList.remove('offline'); //remove the offline class (red color)
+                status.classList.add('online'); //add online class (green color)
+            }
+        });
+
+        socket.on('BYE', function(data) {
+            const status = document.getElementById(`${data.user_id}-status`);
+            if (status){
+                status.textContent = 'Offline';
+                status.classList.remove('online');
+                status.classList.add('offline');
+            }
+        });
+
+        document.getElementById('msg-box').addEventListener('submit', function(event) { //listens for a form being submitted (message we typed out) then performs the function
+            event.preventDefault(); //stops the page from reloading after we send a message. it updates itself without reloading
+
+            const message = document.getElementById('msginput').value; //gets the value of the msginput id and saves it inside a constant
+
+            fetch('/save-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ //converts the data into a json string from a js object
+                    sid: sid,          // senderid
+                    rid: rid,          // receiverid
+                    message: message
+                })
+            }) //fetch sends an http req to server. we are req the server to save the data we just gave it in the db (POST: submitted data)
+
+            .then(res => res.json()) //parses the res body (json) into a js object
+            .then(response => { //handles that js object
+                if (response.success) { //if the message sends then its true so then ti executes th following code
+                    document.getElementById('msginput').value = ''; //clears the msginput box
+                    const chat = response.data.message; //saves the message. let instead of const works asw but allows reassignment of the value
+
+                    const html = `
+                        <div class="right msg">
+                            <h5>${chat}</h5>
+                        </div>
+                    `; //creates a chat bubble for which is aligned to the right and has the message text appended inside.
+                    
+                    document.getElementById('box').insertAdjacentHTML('beforeend', html); //chat bubble is appended into the #box (chat box)
+
+                    socket.emit('newChat', response.data); // emit sends a 'newChat' event to the server with the message details
+
+                    scrollChat();
+                } else {
+                    alert(response.msg);
+                }
+            })
+            .catch(err => console.error('Error:', err));
+        });
+
+        socket.on('loadnewChat', function(data) { //on is ki listening for event. so client listens for the event loadnewChat sent by server and if that happens it runs a function which..
+            if (sid === data.receiver && rid === data.sender) { //first makes current user (us) is the receiver and sender is the person we are chatting with
+                const html = `
+                    <div class="left msg">
+                        <h5>${data.message}</h5>
+                    </div>
+                `; //creates a chat bubble with the message sent inside but this time to the left
+        
+                document.getElementById('box').insertAdjacentHTML('beforeend', html); //appended to the chat area
+            }
+            scrollChat();
+        }); //basically handles receiving incoming messages
+
+        socket.on('loadChat', function(data) {
+            const box = document.getElementById('box');
+            box.innerHTML = ''; // Clear previous content in the chat box. like tumne dusre user se chat karni shuru kari
+
+            const chats = data.chats; //array of chat objects i.e. list of all the messages sent before
+            let html = ''; //prepares a string to store html. let there so we can reassign the html value as we do later
+
+            for (let i = 0; i < chats.length; i++) {
+                const addClass = (chats[i].sender === sid) ? 'right msg' : 'left msg'; //if sid is mine then align to right otw align to left
+                html += `
+                    <div class="${addClass}">
+                        <h5>${chats[i].message}</h5>
+                    </div>
+                `;
+            }
+
+            box.insertAdjacentHTML('beforeend', html);
+            scrollChat();
+        }); //handles chat ki history
+
+        // Scroll to bottom
+        function scrollChat() {
+            const box = document.getElementById('box');
+            box.scrollTop = box.scrollHeight; //scrolltop is how far to scroll from top and scrollheigh is height of container. by making equal we ensure we are always at the bottom
+        }
+    </script>
+</body>

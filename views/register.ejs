@@ -1,0 +1,23 @@
+<h1>Register</h1>
+
+<form action="" method="POST">
+    <input type="text" name="name" placeholder="Enter Name" required>
+    <br>
+    <input type="email" name="email" placeholder="Enter Email" required>
+    <br>
+    <input type="password" name="password" placeholder="Enter Password" required>
+    <br>
+    <input type="submit" value="Register">
+</form>
+
+<%
+    if(typeof message !== 'undefined'){
+        %>
+            <h4 style="color: green;"><%= message %></h4>
+        <%
+    }
+%>
+
+<!-- aight yeah so basically this thing is for how registration page looks. POST is a sort of method where data is sent securely into a request body.
+     action is blank cuz we wanna remain on the same page after submitting the form, not a new url
+     and the next part is ki we are writing js ki when we submit form it will send a message to confirm -->

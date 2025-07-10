@@ -1,0 +1,62 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js" integrity="..." crossorigin="anonymous" referrerpolicy="no-referrer"></script> <!--frontend basically. without this client side pe kuch nahin hoga. for client to recognise io() we need this-->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+    <header>
+        <h1>Welcome to ConnectHUB!</h1>
+        <h2>Hi, <%= user.name %></h2>
+        <h6><a href="/logout" class="link">LOGOUT</a></h6>
+        <% 
+            if (user.role === 'admin') { 
+                %>
+                    <h6><a class="yuh" href="/dash">Back</a></h6>
+                <%
+            }
+        %>
+    </header>
+    <table class="table" border="1" cellpadding="5">
+    <tr><th>Username</th><th>Role</th><th>Banned</th><th>Muted</th><th>Actions</th></tr>
+    <% users.forEach(user => { %>
+        <tr>
+        <td><%= user.name %></td>
+        <td><%= user.role %></td>
+        <td><%= user.isBanned %></td>
+        <td><%= user.isMuted %></td>
+        <td>
+            <% if (!user.isBanned) { %>
+            <form method="POST" action="/admin/ban/<%= user.name %>" style="display:inline;">
+                <button>Ban</button>
+            </form>
+            <% } else { %>
+            <form method="POST" action="/admin/unban/<%= user.name %>" style="display:inline;">
+                <button>Unban</button>
+            </form>
+            <% } %>
+
+            <% if (!user.isMuted) { %>
+            <form method="POST" action="/admin/mute/<%= user.name %>" style="display:inline;">
+                <button>Mute</button>
+            </form>
+            <% } else { %>
+            <form method="POST" action="/admin/unmute/<%= user.name %>" style="display:inline;">
+                <button>Unmute</button>
+            </form>
+            <% } %>
+        </td>
+        </tr>
+    <% }) %>
+    </table>
+
+    <h3>Moderation Logs</h3>
+    <ul class="table">
+    <% logs.forEach(log => { %>
+        <li><strong><%= log.admin %></strong> performed <%= log.action %> on <%= log.targetUser %></li>
+    <% }) %>
+    </ul>
+</body>

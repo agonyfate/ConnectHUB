@@ -1,0 +1,36 @@
+Express - Extension of node.js to make the webd more streamlined and simple (server side)
+
+MongoDB/MOngoose - chat app is dynamic so we need MongoDB for that and mongoose is just their to streamline mongodb 
+as far as i understand. database mein message store karne ke liye also
+
+multer - for user registration
+
+express-session - for offline/online status of user. + login
+
+body-parser - takes raw data submitted by users and makes it available as a js object for the code to run
+
+bcrypt - convert password to stash
+
+dotenv - creates env file which is environment variables. basically for sensitive information related to config of the website
+
+ejs - bridge between html and js. html script mein we can write js, <%%> doesnt output to html, normal js. <%-, <%= do output to html.
+
+express-session: used to store user data across different requests i.e. manage sessions
+
+socket.io -
+
+middleware - functions that run between receiving a request (req) and sending a response (res)
+
+req.body - aight req is basically request, something client side. so whenever the user submits some data it is a request to the server side.
+
+use() - three uses. one we see is for middleware applied for ALL paths like express.json wala. there is no path defined so that middleware is automatically applied to all paths.
+        second is ki middleware where we define the path. so that middleware will only run for those paths.
+        third is when we mount routers using it. so routes defined in like userRoute for example will be mounted under '/' whcih here is the entire directory
+
+routers - so they basically help in writing cleaner code. we can maintain the code easier as well. they are like plugins which instead of putting shit in server.js directly we put it somehwere else then mount the router back to server.js
+
+async, await - await tells the code to wait for the result to come back as we know. we can only use await inside async. so async is basically a asynchronous code whihc is ki code ko bole ki rukja pehle data aane de. but it also doesnt stop
+               the rest of the code from running. agar async na ho then the code will execute too fast and data aega nahin and unfinished data ke saath kaam kar rahe honge
+
+
+
