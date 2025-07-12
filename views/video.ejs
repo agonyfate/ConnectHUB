@@ -1,0 +1,114 @@
+<h2>1-on-1 Video Call</h2>
+<p>Hi <%= user.name %></p>
+<p id="status">Status: Not connected</p>
+
+<video id="my-video" autoplay muted style="width: 300px; border: 1px solid #ccc;"></video>
+<video id="user-video" autoplay style="width: 300px; border: 1px solid #ccc;"></video>
+
+<div>
+    <script>
+        const per = new Peer('<%= senderId %>', { path: '/', host: '/', port: 3000 }); // use sender’s ID directly
+        const targetId = "<%= receiverId %>";
+    </script>
+
+    <button onclick="callPeer()">Start Call</button>
+    <button onclick="endCall()">End Call</button>
+</div>
+
+<div>
+  <button onclick="toggleAudio()">Mute/Unmute</button>
+  <button onclick="toggleVideo()">Cam On/Off</button>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+<script>
+  const myVideo = document.getElementById('my-video');
+  const userVideo = document.getElementById('user-video');
+  const input = document.getElementById('peer-id-input');
+  const status = document.getElementById('status');
+
+  let peer;
+  let localStream;
+  let currentCall;
+
+  peer = new Peer(undefined, {
+    path: '/',
+    host: '/',
+    port: 3000,
+  });
+
+  navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then(stream => {
+    myVideo.srcObject = stream;
+    localStream = stream;
+
+    peer.on('call', call => {
+      if (currentCall) currentCall.close();
+      call.answer(stream);
+      currentCall = call;
+      setStatus('Connected to ' + call.peer);
+
+      call.on('stream', remoteStream => {
+        userVideo.srcObject = remoteStream;
+      });
+
+      call.on('close', () => {
+        setStatus('Call Ended');
+        userVideo.srcObject = null;
+      });
+    });
+  });
+
+  peer.on('open', id => {
+    console.log('Your Peer ID:', id);
+    alert('Your Peer ID: ' + id);
+  });
+
+  function callPeer() {
+    if (!targetId) return alert('No user selected');
+
+    setStatus('Calling ' + targetId + '...');
+    const call = peer.call(targetId, localStream);
+    currentCall = call;
+
+    call.on('stream', remoteStream => {
+      userVideo.srcObject = remoteStream;
+      setStatus('Connected to ' + targetId);
+    });
+
+    call.on('close', () => {
+      setStatus('Call Ended');
+      userVideo.srcObject = null;
+    });
+  }
+
+  function endCall() {
+    if (currentCall) {
+      currentCall.close();
+      currentCall = null;
+      setStatus('Call Ended');
+      userVideo.srcObject = null;
+    }
+  }
+
+  function toggleAudio() {
+    if (localStream) {
+      localStream.getAudioTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+    }
+  }
+
+  function toggleVideo() {
+    if (localStream) {
+      localStream.getVideoTracks().forEach(track => {
+        track.enabled = !track.enabled;
+      });
+    }
+  }
+
+  function setStatus(text) {
+    status.textContent = 'Status: ' + text;
+  }
+</script>
+
+<a href="/dash">Back</a>

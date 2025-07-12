@@ -82,6 +82,11 @@ const logout = async(req, res)=>{
 
 const loadDash = async(req, res)=>{
     try {
+        /* const guy = await User.find(req.session.user._id);
+        if(guy.isBanned) {
+            return res.status(403).send({success:false, message: 'get unbanned'});
+        } */
+
         var users = await User.find({_id: {$ne: req.session.user._id}});   
         res.render('dash', {user: req.session.user, users:users}); //renders the views page saved as dash with the name being pulled from the data given by user
     } catch (error) {
@@ -141,6 +146,11 @@ const unmute = async(req,res)=>{
 
 const saveChat = async(req, res)=>{
     try {
+        const sender = await User.findById(req.body.sid);
+        if(sender.isMuted){
+            return res.status(403).send({success:false, message: 'ur muted'})
+        }
+
         var chat = new Chat({
             sender:req.body.sid,
             receiver:req.body.rid,
@@ -151,6 +161,17 @@ const saveChat = async(req, res)=>{
         res.status(200).send({success:true, msg:'Chat!', data:newChat});
     } catch(error) {
         res.status(400).send({success:false, msg:error.message});
+    }
+}
+
+const video = async(req, res)=>{
+    try {
+        const senderId = req.session.user._id.toString();
+        const receiverId = req.params.id;
+        const user = req.session.user;
+        res.render('video', {senderId, receiverId});
+    } catch(error) {
+        console.log(error.message);
     }
 }
 
@@ -166,7 +187,8 @@ module.exports = {
     ban,
     mute,
     unban,
-    unmute
+    unmute,
+    video
 }
 
 //registerload renders the page and register handles the form submission. loadLogin renders the page while login checks the submitted data aginst stored, if matching creates session. logout deletes the session created by login func. loadDash renders dashboard

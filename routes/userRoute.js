@@ -48,5 +48,7 @@ userRoute.post('/admin/ban/:name', userAuth.isLogin, userAuth.isAdmin, userContr
 userRoute.post('/admin/mute/:name', userAuth.isLogin, userAuth.isAdmin, userControl.mute);
 userRoute.post('/admin/unban/:name', userAuth.isLogin, userAuth.isAdmin, userControl.unban);
 userRoute.post('/admin/unmute/:name', userAuth.isLogin, userAuth.isAdmin, userControl.unmute);
+userRoute.get('/video', userAuth.isLogin, userControl.video);
+userRoute.get('/video/:id', userAuth.isLogin, userControl.video);
 
 module.exports = userRoute;

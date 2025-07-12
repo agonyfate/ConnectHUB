@@ -33,14 +33,14 @@ usp.on('connection', async function(socket){ //listens for connections
         return socket.disconnect(true);
     }
 
-    await User.findByIdAndUpdate({_id: uid}, {$set:{is_online:'1'}}); //updates db to mark user as online
+    await User.findByIdAndUpdate({_id: uid}, {$set:{isOnline:'1'}}); //updates db to mark user as online
 
     socket.broadcast.emit('HI', {user_id: uid}); //broadcasts that this user id just came online. socket.broadcast.emit sends the change to all users except the sender. so every other user's screen will update that this guy just came online or offline or whatever
 
     socket.on('disconnect', async function(){
         console.log('User disconnected');
 
-        await User.findByIdAndUpdate({_id: uid}, {$set:{is_online:'0'}});
+        await User.findByIdAndUpdate({_id: uid}, {$set:{isOnline:'0'}});
 
         socket.broadcast.emit('BYE', {user_id: uid}); //broadcasts ki user just went offline. the reason we are putting these two lines of broadcast.emit in is cause otherwise there will be no live updates. jaise ki we are logged in and someone logs in after us, it will still show him as offline in our page
     });
@@ -65,6 +65,15 @@ usp.on('connection', async function(socket){ //listens for connections
         socket.emit('loadChat', {chats: chats}); //and then send the data back to the requesting socket
     });
 });
+
+const { ExpressPeerServer } = require('peer'); //we get only part of the peer module which covers the server side. this allows us to write a cleaner code.
+const peerServer =  ExpressPeerServer(serv, {
+    debug: true,
+    path: '/'
+});
+
+run.use('/peerjs', peerServer);
+
 
 serv.listen(7777, function(){
     console.log('Server is running');

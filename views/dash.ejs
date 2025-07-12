@@ -40,6 +40,9 @@
                                     <%
                                 }
                             %>
+                            <form action="/video/<%= users[i]['_id'] %>" method="GET" style="display:inline;">
+                                <button class="pointy" type="submit">🎦</button>
+                            </form>
                         </li>
                     <% } %>
                 <% } else { %>
